@@ -1,0 +1,2 @@
+Pictures shown in the dashboard.
+unet_examples.png and murky_examples.png use Coralscapes photos (Sauder et al., 2025), Apache-2.0 licence.

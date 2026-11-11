@@ -1,0 +1,27 @@
+situation,previous_lane,learned_action,times_seen,q_fast,q_normal,q_detail
+Sees bleached coral,no bleaching on previous lane nearby,detail,10030,-0.168,-0.113,0.302
+"Sees sand/rock, 1 m since bleaching",no bleaching on previous lane nearby,fast,2372,-0.164,-0.229,-0.337
+"Sees sand/rock, 2 m since bleaching",no bleaching on previous lane nearby,fast,4143,-0.186,-0.27,-0.483
+"Sees sand/rock, 3 m since bleaching",no bleaching on previous lane nearby,fast,4876,-0.172,-0.254,-0.456
+"Sees sand/rock, 4 m since bleaching",no bleaching on previous lane nearby,fast,5192,-0.184,-0.273,-0.491
+"Sees sand/rock, 5 m since bleaching",no bleaching on previous lane nearby,fast,5527,-0.175,-0.261,-0.466
+"Sees sand/rock, 6+ m since bleaching",no bleaching on previous lane nearby,fast,203397,-0.179,-0.267,-0.472
+"Sees healthy coral, 1 m since bleaching",no bleaching on previous lane nearby,detail,6440,-0.166,-0.076,0.009
+"Sees healthy coral, 2 m since bleaching",no bleaching on previous lane nearby,normal,8277,-0.166,-0.059,-0.174
+"Sees healthy coral, 3 m since bleaching",no bleaching on previous lane nearby,normal,7442,-0.166,-0.051,-0.206
+"Sees healthy coral, 4 m since bleaching",no bleaching on previous lane nearby,normal,6698,-0.166,-0.052,-0.223
+"Sees healthy coral, 5 m since bleaching",no bleaching on previous lane nearby,normal,6082,-0.166,-0.05,-0.226
+"Sees healthy coral, 6+ m since bleaching",no bleaching on previous lane nearby,normal,114061,-0.167,-0.054,-0.229
+Sees bleached coral,bleaching on previous lane nearby,detail,55725,-0.166,-0.13,0.505
+"Sees sand/rock, 1 m since bleaching",bleaching on previous lane nearby,fast,2031,-0.165,-0.233,-0.279
+"Sees sand/rock, 2 m since bleaching",bleaching on previous lane nearby,fast,724,-0.19,-0.253,-0.44
+"Sees sand/rock, 3 m since bleaching",bleaching on previous lane nearby,fast,341,-0.17,-0.249,-0.392
+"Sees sand/rock, 4 m since bleaching",bleaching on previous lane nearby,fast,301,-0.184,-0.273,-0.516
+"Sees sand/rock, 5 m since bleaching",bleaching on previous lane nearby,fast,220,-0.173,-0.228,-0.36
+"Sees sand/rock, 6+ m since bleaching",bleaching on previous lane nearby,fast,7717,-0.179,-0.232,-0.407
+"Sees healthy coral, 1 m since bleaching",bleaching on previous lane nearby,detail,6833,-0.166,-0.092,0.129
+"Sees healthy coral, 2 m since bleaching",bleaching on previous lane nearby,detail,1595,-0.168,-0.054,0.069
+"Sees healthy coral, 3 m since bleaching",bleaching on previous lane nearby,detail,1039,-0.166,-0.063,-0.044
+"Sees healthy coral, 4 m since bleaching",bleaching on previous lane nearby,normal,912,-0.166,-0.062,-0.074
+"Sees healthy coral, 5 m since bleaching",bleaching on previous lane nearby,normal,790,-0.167,-0.063,-0.158
+"Sees healthy coral, 6+ m since bleaching",bleaching on previous lane nearby,normal,17235,-0.168,-0.062,-0.062

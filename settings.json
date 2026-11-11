@@ -1,0 +1,77 @@
+{
+  "MAP": {
+    "lanes": 40,
+    "lane_cells": 100,
+    "cell_len_m": 1.0,
+    "lane_width_m": 2.0,
+    "clump_size": 4.0,
+    "bleach_clump": 3.0,
+    "bleached_share": 0.3
+  },
+  "ROBOT": {
+    "hotel_power_w": 40.0,
+    "drag_coeff": 12.0,
+    "photo_energy_j": 10.0,
+    "look_energy_j": 0.2,
+    "photo_mb": 4.0
+  },
+  "MODES": {
+    "fast": {
+      "speed": 1.5,
+      "spacing": 2.0
+    },
+    "normal": {
+      "speed": 1.0,
+      "spacing": 0.5
+    },
+    "detail": {
+      "speed": 0.5,
+      "spacing": 0.25
+    }
+  },
+  "SENSOR": {
+    "sand_correct": 0.97,
+    "coral_correct": 0.97
+  },
+  "CLASSIFIERS": {
+    "Perfect classifier": {
+      "p_bleached_found": 1.0,
+      "p_healthy_called_bleached": 0.0
+    },
+    "Measured classifier": {
+      "p_bleached_found": 0.7637795275590551,
+      "p_healthy_called_bleached": 0.046898638426626324
+    }
+  },
+  "SAND": [
+    0.3,
+    0.5,
+    0.7
+  ],
+  "N_MAPS": 30,
+  "KG": {
+    "link_radius_m": 2.3,
+    "min_degree": 2
+  },
+  "RL_REWARD": {
+    "alpha": 1.0,
+    "beta": 3.0,
+    "gamma": 0.01,
+    "value_bleached": 1.0,
+    "value_healthy": 0.2
+  },
+  "FUSION": {
+    "depth": {
+      "sand_mean": 0.0,
+      "sand_sd": 0.03,
+      "rock_share": 0.3,
+      "rock_mean": 0.4,
+      "rock_sd": 0.12,
+      "coral_mean": 0.6,
+      "coral_sd": 0.2,
+      "sensor_sd": 0.08
+    },
+    "position_weight": 0.6,
+    "position_weight_tuned_on": "18 practice reefs with seeds separate from the 90 test reefs"
+  }
+}

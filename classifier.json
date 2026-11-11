@@ -1,0 +1,19 @@
+{
+  "dataset": "Kaggle: asfarhossainsitab/coral-reefs-images",
+  "classes": ["Bleached", "Healthy"],
+  "images": {"train": 9662, "valid": 463, "test": 257},
+  "per_split": {"train": {"Bleached": 4980, "Healthy": 4682}, "valid": {"Bleached": 240, "Healthy": 223}, "test": {"Bleached": 135, "Healthy": 122}},
+  "training": {"device": "NVIDIA T4 GPU (Google Colab)", "epochs": 6, "pretrained": "ImageNet", "train_minutes": 6.7,
+               "best_valid_acc": 0.9827, "model_size_mb": 6.21, "ms_per_image": 5.53},
+  "kaggle_test": {"accuracy": 1.0, "confusion_matrix": [[135, 0], [0, 122]]},
+  "exact_copies_between_splits": {"train_vs_valid": 0, "train_vs_test": 0, "valid_vs_test": 0},
+  "near_copy_check": {"threshold_bits": 6,
+                      "valid": {"total": 463, "near_copies": 196, "percent": 42.3},
+                      "test": {"total": 257, "near_copies": 96, "percent": 37.4}},
+  "independent_test": {"dataset": "Hugging Face: esahit/coral-health-classification (healthy + unhealthy only)",
+                       "accuracy": 0.8708,
+                       "per_class": {"Bleached": {"precision": 0.926, "recall": 0.7638, "support": 508},
+                                     "Healthy": {"precision": 0.84, "recall": 0.9531, "support": 661}},
+                       "confusion_matrix": [[388, 120], [31, 630]],
+                       "accuracy_by_source": {"BU": 0.9031, "BHD": 0.8617}}
+}
