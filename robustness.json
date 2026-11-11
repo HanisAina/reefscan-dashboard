@@ -1,0 +1,570 @@
+{
+ "levels": [
+  0.0,
+  0.25,
+  0.5,
+  0.75,
+  1.0
+ ],
+ "level_names": [
+  "Clear",
+  "Slightly murky",
+  "Murky",
+  "Very murky",
+  "Extremely murky"
+ ],
+ "classifier": {
+  "original_raw": [
+   {
+    "level": 0.0,
+    "accuracy": 0.8708,
+    "bleached_recall": 0.7638,
+    "confusion": [
+     [
+      388,
+      120
+     ],
+     [
+      31,
+      630
+     ]
+    ]
+   },
+   {
+    "level": 0.25,
+    "accuracy": 0.8948,
+    "bleached_recall": 0.811,
+    "confusion": [
+     [
+      412,
+      96
+     ],
+     [
+      27,
+      634
+     ]
+    ]
+   },
+   {
+    "level": 0.5,
+    "accuracy": 0.7981,
+    "bleached_recall": 0.5748,
+    "confusion": [
+     [
+      292,
+      216
+     ],
+     [
+      20,
+      641
+     ]
+    ]
+   },
+   {
+    "level": 0.75,
+    "accuracy": 0.7049,
+    "bleached_recall": 0.3563,
+    "confusion": [
+     [
+      181,
+      327
+     ],
+     [
+      18,
+      643
+     ]
+    ]
+   },
+   {
+    "level": 1.0,
+    "accuracy": 0.6116,
+    "bleached_recall": 0.1299,
+    "confusion": [
+     [
+      66,
+      442
+     ],
+     [
+      12,
+      649
+     ]
+    ]
+   }
+  ],
+  "original_corrected": [
+   {
+    "level": 0.0,
+    "accuracy": 0.7707,
+    "bleached_recall": 0.5118,
+    "confusion": [
+     [
+      260,
+      248
+     ],
+     [
+      20,
+      641
+     ]
+    ]
+   },
+   {
+    "level": 0.25,
+    "accuracy": 0.7793,
+    "bleached_recall": 0.5138,
+    "confusion": [
+     [
+      261,
+      247
+     ],
+     [
+      11,
+      650
+     ]
+    ]
+   },
+   {
+    "level": 0.5,
+    "accuracy": 0.6527,
+    "bleached_recall": 0.2146,
+    "confusion": [
+     [
+      109,
+      399
+     ],
+     [
+      7,
+      654
+     ]
+    ]
+   },
+   {
+    "level": 0.75,
+    "accuracy": 0.58,
+    "bleached_recall": 0.0374,
+    "confusion": [
+     [
+      19,
+      489
+     ],
+     [
+      2,
+      659
+     ]
+    ]
+   },
+   {
+    "level": 1.0,
+    "accuracy": 0.5663,
+    "bleached_recall": 0.002,
+    "confusion": [
+     [
+      1,
+      507
+     ],
+     [
+      0,
+      661
+     ]
+    ]
+   }
+  ],
+  "clean_raw": [
+   {
+    "level": 0.0,
+    "accuracy": 0.7767,
+    "bleached_recall": 0.5315,
+    "confusion": [
+     [
+      270,
+      238
+     ],
+     [
+      23,
+      638
+     ]
+    ]
+   },
+   {
+    "level": 0.25,
+    "accuracy": 0.8854,
+    "bleached_recall": 0.8051,
+    "confusion": [
+     [
+      409,
+      99
+     ],
+     [
+      35,
+      626
+     ]
+    ]
+   },
+   {
+    "level": 0.5,
+    "accuracy": 0.7203,
+    "bleached_recall": 0.378,
+    "confusion": [
+     [
+      192,
+      316
+     ],
+     [
+      11,
+      650
+     ]
+    ]
+   },
+   {
+    "level": 0.75,
+    "accuracy": 0.5697,
+    "bleached_recall": 0.0138,
+    "confusion": [
+     [
+      7,
+      501
+     ],
+     [
+      2,
+      659
+     ]
+    ]
+   },
+   {
+    "level": 1.0,
+    "accuracy": 0.5654,
+    "bleached_recall": 0.0,
+    "confusion": [
+     [
+      0,
+      508
+     ],
+     [
+      0,
+      661
+     ]
+    ]
+   }
+  ],
+  "clean_corrected": [
+   {
+    "level": 0.0,
+    "accuracy": 0.7297,
+    "bleached_recall": 0.4193,
+    "confusion": [
+     [
+      213,
+      295
+     ],
+     [
+      21,
+      640
+     ]
+    ]
+   },
+   {
+    "level": 0.25,
+    "accuracy": 0.8109,
+    "bleached_recall": 0.6004,
+    "confusion": [
+     [
+      305,
+      203
+     ],
+     [
+      18,
+      643
+     ]
+    ]
+   },
+   {
+    "level": 0.5,
+    "accuracy": 0.6536,
+    "bleached_recall": 0.2106,
+    "confusion": [
+     [
+      107,
+      401
+     ],
+     [
+      4,
+      657
+     ]
+    ]
+   },
+   {
+    "level": 0.75,
+    "accuracy": 0.5791,
+    "bleached_recall": 0.0354,
+    "confusion": [
+     [
+      18,
+      490
+     ],
+     [
+      2,
+      659
+     ]
+    ]
+   },
+   {
+    "level": 1.0,
+    "accuracy": 0.5663,
+    "bleached_recall": 0.0039,
+    "confusion": [
+     [
+      2,
+      506
+     ],
+     [
+      1,
+      660
+     ]
+    ]
+   }
+  ]
+ },
+ "unet": {
+  "raw": [
+   {
+    "level": 0.0,
+    "mean_iou": 0.5905,
+    "bleached_dice": 0.5678,
+    "photo_confusion": [
+     [
+      126,
+      26,
+      5
+     ],
+     [
+      19,
+      186,
+      3
+     ],
+     [
+      3,
+      9,
+      15
+     ]
+    ],
+    "photo_accuracy": 0.8342
+   },
+   {
+    "level": 0.25,
+    "mean_iou": 0.5453,
+    "bleached_dice": 0.4853,
+    "photo_confusion": [
+     [
+      142,
+      12,
+      3
+     ],
+     [
+      79,
+      126,
+      3
+     ],
+     [
+      9,
+      6,
+      12
+     ]
+    ],
+    "photo_accuracy": 0.7143
+   },
+   {
+    "level": 0.5,
+    "mean_iou": 0.3903,
+    "bleached_dice": 0.1861,
+    "photo_confusion": [
+     [
+      99,
+      52,
+      6
+     ],
+     [
+      21,
+      170,
+      17
+     ],
+     [
+      11,
+      7,
+      9
+     ]
+    ],
+    "photo_accuracy": 0.7092
+   },
+   {
+    "level": 0.75,
+    "mean_iou": 0.2579,
+    "bleached_dice": 0.0068,
+    "photo_confusion": [
+     [
+      142,
+      13,
+      2
+     ],
+     [
+      142,
+      65,
+      1
+     ],
+     [
+      22,
+      5,
+      0
+     ]
+    ],
+    "photo_accuracy": 0.5281
+   },
+   {
+    "level": 1.0,
+    "mean_iou": 0.0976,
+    "bleached_dice": 0.0,
+    "photo_confusion": [
+     [
+      156,
+      1,
+      0
+     ],
+     [
+      199,
+      9,
+      0
+     ],
+     [
+      26,
+      1,
+      0
+     ]
+    ],
+    "photo_accuracy": 0.4209
+   }
+  ],
+  "corrected": [
+   {
+    "level": 0.0,
+    "mean_iou": 0.3057,
+    "bleached_dice": 0.321,
+    "photo_confusion": [
+     [
+      8,
+      146,
+      3
+     ],
+     [
+      0,
+      207,
+      1
+     ],
+     [
+      0,
+      19,
+      8
+     ]
+    ],
+    "photo_accuracy": 0.5689
+   },
+   {
+    "level": 0.25,
+    "mean_iou": 0.2815,
+    "bleached_dice": 0.3017,
+    "photo_confusion": [
+     [
+      8,
+      145,
+      4
+     ],
+     [
+      0,
+      205,
+      3
+     ],
+     [
+      0,
+      18,
+      9
+     ]
+    ],
+    "photo_accuracy": 0.5663
+   },
+   {
+    "level": 0.5,
+    "mean_iou": 0.1606,
+    "bleached_dice": 0.1168,
+    "photo_confusion": [
+     [
+      1,
+      112,
+      44
+     ],
+     [
+      0,
+      194,
+      14
+     ],
+     [
+      0,
+      15,
+      12
+     ]
+    ],
+    "photo_accuracy": 0.5281
+   },
+   {
+    "level": 0.75,
+    "mean_iou": 0.1404,
+    "bleached_dice": 0.0584,
+    "photo_confusion": [
+     [
+      0,
+      104,
+      53
+     ],
+     [
+      0,
+      187,
+      21
+     ],
+     [
+      0,
+      20,
+      7
+     ]
+    ],
+    "photo_accuracy": 0.4949
+   },
+   {
+    "level": 1.0,
+    "mean_iou": 0.1357,
+    "bleached_dice": 0.046,
+    "photo_confusion": [
+     [
+      0,
+      125,
+      32
+     ],
+     [
+      0,
+      182,
+      26
+     ],
+     [
+      0,
+      25,
+      2
+     ]
+    ],
+    "photo_accuracy": 0.4694
+   }
+  ]
+ },
+ "method": {
+  "murky": "red light lost (up to 60%), blue-green haze (up to 55%), darker (up to 35%), sensor noise, blur",
+  "correction": "grey-world white balance + contrast stretch"
+ },
+ "test_sets": {
+  "classifier": "Hugging Face esahit independent set, 1,169 photos",
+  "unet": "Coralscapes test photos"
+ }
+}

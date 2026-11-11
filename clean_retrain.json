@@ -1,0 +1,98 @@
+{
+ "photos": 10382,
+ "groups": 3302,
+ "largest_group": 1600,
+ "median_group": 2,
+ "groups_of_one": 383,
+ "original_test_sharing_group_with_train": {
+  "count": 107,
+  "total": 257,
+  "percent": 41.6
+ },
+ "original_valid_sharing_group_with_train": {
+  "count": 210,
+  "total": 463,
+  "percent": 45.4
+ },
+ "clean_split": {
+  "train": 7078,
+  "valid": 1041,
+  "test": 2263
+ },
+ "clean_best_valid_acc": 1.0,
+ "clean_test": {
+  "accuracy": 0.9735,
+  "confusion_matrix": [
+   [
+    1170,
+    20
+   ],
+   [
+    40,
+    1033
+   ]
+  ],
+  "per_class": {
+   "Bleached": {
+    "precision": 0.9669,
+    "recall": 0.9832,
+    "support": 1190
+   },
+   "Healthy": {
+    "precision": 0.981,
+    "recall": 0.9627,
+    "support": 1073
+   }
+  }
+ },
+ "independent_clean_model": {
+  "accuracy": 0.7767,
+  "confusion_matrix": [
+   [
+    270,
+    238
+   ],
+   [
+    23,
+    638
+   ]
+  ],
+  "per_class": {
+   "Bleached": {
+    "precision": 0.9215,
+    "recall": 0.5315,
+    "support": 508
+   },
+   "Healthy": {
+    "precision": 0.7283,
+    "recall": 0.9652,
+    "support": 661
+   }
+  }
+ },
+ "independent_original_model": {
+  "accuracy": 0.8708,
+  "confusion_matrix": [
+   [
+    388,
+    120
+   ],
+   [
+    31,
+    630
+   ]
+  ],
+  "per_class": {
+   "Bleached": {
+    "precision": 0.926,
+    "recall": 0.7638,
+    "support": 508
+   },
+   "Healthy": {
+    "precision": 0.84,
+    "recall": 0.9531,
+    "support": 661
+   }
+  }
+ }
+}
