@@ -18,6 +18,8 @@ import style as S
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
+if not os.path.exists(os.path.join(DATA, "summary.csv")) and os.path.exists(os.path.join(HERE, "summary.csv")):
+    DATA = HERE                     # data files were uploaded next to app.py instead of inside data/
 MODELS = os.path.join(HERE, "models")
 FIGS = os.path.join(HERE, "figs")
 _fb = os.path.join(HERE, "feedback_link.txt")          # paste the UAT form link into this file
@@ -175,12 +177,28 @@ if summary is not None:
     SAVE_E = 100 * (1 - A50.energy_kj_mean / D50.energy_kj_mean)
     SAVE_T = 100 * (1 - A50.time_min_mean / D50.time_min_mean)
     SAVE_P = 100 * (1 - A50.photos_mean / D50.photos_mean)
+else:
+    SAVE_E = SAVE_T = SAVE_P = float("nan")
 
 # ------------------------------------------------------------------ top bar
 html(S.brand())
 if "nav" not in st.session_state:
     st.session_state["nav"] = "Home"
-page = st.radio("Navigation", PAGES, horizontal=True, key="nav", label_visibility="collapsed")
+if "_page" not in st.session_state:
+    st.session_state["_page"] = "Home"
+
+
+def _keep_page():
+    """Clicking the page you are already on would leave nothing selected; keep it selected."""
+    if st.session_state.get("nav") is None:
+        st.session_state["nav"] = st.session_state["_page"]
+
+
+if hasattr(st, "pills"):          # Streamlit 1.40+: real pill buttons
+    page = st.pills("Navigation", PAGES, key="nav", label_visibility="collapsed", on_change=_keep_page) or st.session_state["_page"]
+else:
+    page = st.radio("Navigation", PAGES, horizontal=True, key="nav", label_visibility="collapsed")
+st.session_state["_page"] = page
 
 # ================================================================== 1 HOME
 if page == "Home":
@@ -256,7 +274,8 @@ elif page == "Classifier":
              "The simulation uses these real error rates, not the 100%."]))
         html(S.cards([(f"{clf['images']['train']:,}", "Training photos"), (f"{t['train_minutes']} min", "Training time", "on a T4 GPU"),
                       (f"{t['model_size_mb']} MB", "Model size", "small enough for a robot"), (f"{t['ms_per_image']} ms", "Time per photo", "on a GPU")], cols=4))
-        tab1, tab2, tab3, tab4 = st.tabs(["Step 1 · Looked perfect", "Step 2 · Why: near-copies", "Step 3 · The honest number", "Try your own photo"])
+        tab1, tab2, tab3, tab3b, tab4 = st.tabs(["Step 1 · Looked perfect", "Step 2 · Why: near-copies", "Step 3 · The honest number",
+                                                  "Step 4 · Cleaned and retrained", "Try your own photo"])
         with tab1:
             c = st.columns(2)
             with c[0]:
@@ -293,6 +312,36 @@ elif page == "Classifier":
                               (f"{100 * pc['Bleached']['recall']:.1f}%", "of bleached coral found", "about 1 in 4 missed", "down"),
                               (f"{100 * pc['Healthy']['recall']:.1f}%", "of healthy coral found", "", "up"),
                               (f"{100 * pc['Bleached']['precision']:.1f}%", "of its 'bleached' answers were right", "", "up")], cols=2))
+        with tab3b:
+            cr = load_json("clean_retrain.json")
+            if not cr:
+                html(S.callout("data/clean_retrain.json not found (run colab/clean_and_murky.py).", "info"))
+            else:
+                ct, ic, io = cr["clean_test"], cr["independent_clean_model"], cr["independent_original_model"]
+                html(S.explain(
+                    "To remove the shortcut (Gap 4), every photo was grouped with its near-copies, and each whole group was put in "
+                    "<b>only one</b> of training, validation or test. Then the model was trained again from scratch.",
+                    [f"The {cr['photos']:,} photos form only <b>{cr['groups']:,} groups</b>; the largest group alone has <b>{cr['largest_group']:,}</b> photos (one long video).",
+                     f"With the stricter grouping, <b>{cr['original_test_sharing_group_with_train']['percent']}%</b> of the original test photos shared a group with training.",
+                     f"On a clean test set the new model scores <b>{100 * ct['accuracy']:.1f}%</b>: an honest score for this dataset, instead of 100%.",
+                     f"On the independent photos it scores <b>{100 * ic['accuracy']:.1f}%</b>, lower than the original model's <b>{100 * io['accuracy']:.1f}%</b>. "
+                     "Removing the shortcut fixes the <i>measurement</i>, but cannot add the variety the dataset lacks."]))
+                html(S.cards([(f"{cr['groups']:,}", "groups of near-copies", f"from {cr['photos']:,} photos"),
+                              (f"{100 * ct['accuracy']:.1f}%", "clean test accuracy", "was 100% with shortcuts", "down"),
+                              (f"{100 * ic['accuracy']:.1f}%", "on independent photos", f"original model: {100 * io['accuracy']:.1f}%", "down"),
+                              (f"{100 * ic['per_class']['Bleached']['recall']:.1f}%", "of bleached found (independent)",
+                               f"original model: {100 * io['per_class']['Bleached']['recall']:.1f}%", "down")], cols=4))
+                c = st.columns(2)
+                with c[0]:
+                    plot(C.grouped(["Own test set", "Independent photos"],
+                                   {"Original model": [100.0, 100 * io["accuracy"]], "Cleaned and retrained": [100 * ct["accuracy"], 100 * ic["accuracy"]]},
+                                   "Accuracy: own test set vs new photos", "%", fmt="{:.1f}%"), key="cr1")
+                with c[1]:
+                    plot(C.confusion(ic["confusion_matrix"], clf["classes"], "Retrained model on independent photos", "Purples"), key="cr2")
+                html(S.callout("<b>What this means:</b> the 100% was inflated by the shortcut; the honest in-dataset score is 97.4%. "
+                               "Both models do worse on photos from other places, so the dataset needs more variety, not more of the same "
+                               "videos. The simulation keeps the original model's error rates on independent photos (76% of bleaching "
+                               "found), which are the ones measured on photos neither model was trained on.", "info"))
         with tab4:
             up = None
             if not HAS_TORCH or not os.path.exists(os.path.join(MODELS, "best_model.pt")):
@@ -500,6 +549,54 @@ elif page == "Results":
                                     "Bleached in detail (no linger)": [f"{v:.1f}%" for v in g.no_linger_bleached_detail_pct]}))
             st.caption("The depth sensor, rock heights and the strength of the position clue are assumptions; the position "
                        "strength was tuned on 18 separate practice reefs, not on these test reefs.")
+        rob, mk = load_json("robustness.json"), load_csv("murky_survey.csv")
+        if rob and mk is not None:
+            html(S.section("Murky water · Problem 3", "What happens when the water gets cloudy",
+                           "The test photos were made murky step by step (red light lost, blue-green haze, darker, grainy, blurred), "
+                           "then both models were tested again. Their new error rates were then given to the robot."))
+            names = rob["level_names"]
+            m_ = mk[np.isclose(mk.sand_fraction, sand)].groupby(["variant", "level"]).mean(numeric_only=True)
+            cam_d = [m_.loc[("Camera only", l)].bleached_detail_pct for l in rob["levels"]]
+            fus_d = [m_.loc[("Camera + depth + position", l)].bleached_detail_pct for l in rob["levels"]]
+            html(S.explain(
+                "Murky water hurts both models, and simple colour correction makes it <b>worse</b>, not better.",
+                [f"The classifier finds <b>{100 * rob['classifier']['original_raw'][0]['bleached_recall']:.0f}%</b> of bleached coral in clear water, "
+                 f"<b>{100 * rob['classifier']['original_raw'][2]['bleached_recall']:.0f}%</b> when murky and <b>{100 * rob['classifier']['original_raw'][4]['bleached_recall']:.0f}%</b> when extremely murky.",
+                 "Colour correction (grey-world white balance) removes the white-blue look that marks bleaching, so the models miss even more.",
+                 f"In the survey, combining sensors keeps the robot useful up to 'Murky': <b>{fus_d[2]:.0f}%</b> of bleached coral in detail, against "
+                 f"<b>{cam_d[2]:.0f}%</b> with the camera alone.",
+                 f"Beyond that both fail ({fus_d[3]:.0f}% and {cam_d[3]:.0f}%): the robot should report that the water is too murky rather than trust its camera."]))
+            lev = st.select_slider("Water clarity", names, value=names[2], key="murk")
+            i = names.index(lev)
+            co, u = rob["classifier"]["original_raw"][i], rob["unet"]["raw"][i]
+            html(S.cards([(f"{100 * co['bleached_recall']:.0f}%", "Classifier: bleached found", f"accuracy {100 * co['accuracy']:.0f}%"),
+                          (f"{u['mean_iou']:.2f}", "Tiny U-Net mean IoU", f"bleached Dice {u['bleached_dice']:.2f}"),
+                          (f"{cam_d[i]:.0f}%", "Bleached in detail, camera only", "adaptive robot", "down" if cam_d[i] < 80 else "up"),
+                          (f"{fus_d[i]:.0f}%", "Bleached in detail, fused", "adaptive robot", "down" if fus_d[i] < 80 else "up")], cols=4))
+            c = st.columns(2)
+            with c[0]:
+                plot(C.lines(names, {"Classifier": [100 * d["bleached_recall"] for d in rob["classifier"]["original_raw"]],
+                                     "Classifier, colour-corrected": [100 * d["bleached_recall"] for d in rob["classifier"]["original_corrected"]],
+                                     "Tiny U-Net": [100 * d["bleached_dice"] for d in rob["unet"]["raw"]],
+                                     "Tiny U-Net, colour-corrected": [100 * d["bleached_dice"] for d in rob["unet"]["corrected"]]},
+                             "", "%", "Models: bleached coral found (classifier) and outlined (U-Net Dice)", height=380,
+                             colors={"Classifier": "#1259ff", "Classifier, colour-corrected": "#9db8ff",
+                                     "Tiny U-Net": "#ff3b30", "Tiny U-Net, colour-corrected": "#ffaaa5"}), key="mk1")
+            with c[1]:
+                plot(C.lines(names, {"Camera only": cam_d, "Camera + depth + position": fus_d}, "", "%",
+                             f"Survey: bleached coral photographed in detail ({int(sand * 100)}% sand)", height=380,
+                             colors={"Camera only": "#8e8e93", "Camera + depth + position": "#1259ff"}), key="mk2")
+            with st.expander("Survey numbers at every clarity level"):
+                table(pd.DataFrame([{"Water": names[j], "Robot sees with": v,
+                                     "Metres labelled correctly": f"{100 * m_.loc[(v, l)].accuracy:.0f}%",
+                                     "Bleached found": f"{100 * m_.loc[(v, l)].bleached_recall:.0f}%",
+                                     "False alarms / 100 m": f"{m_.loc[(v, l)].false_alarms_per_100m:.1f}",
+                                     "Energy (kJ)": f"{m_.loc[(v, l)].energy_kj:.0f}",
+                                     "Bleached in detail": f"{m_.loc[(v, l)].bleached_detail_pct:.0f}%"}
+                                    for j, l in enumerate(rob["levels"]) for v in ["Camera only", "Camera + depth + position"]]))
+            st.caption("Murky water is simulated on real test photos (classifier: 1,169 independent photos; U-Net: Coralscapes test photos). "
+                       "Real turbidity varies more than this. The slight rise for the classifier at 'Slightly murky' is probably because "
+                       "its training videos were themselves blue-green.")
     next_button()
 
 # ================================================================== 6 KNOWLEDGE GRAPH
@@ -678,6 +775,14 @@ else:
                       f"<b>{100 * g_.loc['Camera only'].accuracy:.0f}%</b> (camera only) to <b>{100 * g_.loc['Camera + depth + position'].accuracy:.0f}%</b>, "
                       f"and bleached coral found from <b>{100 * g_.loc['Camera only'].bleached_recall:.0f}%</b> to "
                       f"<b>{100 * g_.loc['Camera + depth + position'].bleached_recall:.0f}%</b>. <i>The depth sensor is simulated.</i>")
+    cr_, rob_, mk_ = load_json("clean_retrain.json"), load_json("robustness.json"), load_csv("murky_survey.csv")
+    MURKY_TXT = ""
+    if rob_ and mk_ is not None:
+        q_ = mk_[np.isclose(mk_.sand_fraction, 0.5)].groupby(["variant", "level"]).bleached_detail_pct.mean()
+        MURKY_TXT = (f"<b>Murky water was tested</b> on real photos made murky in 5 steps: the classifier's bleached recall falls from "
+                     f"{100 * rob_['classifier']['original_raw'][0]['bleached_recall']:.0f}% to {100 * rob_['classifier']['original_raw'][4]['bleached_recall']:.0f}%, "
+                     f"and colour correction makes it worse. Combining sensors keeps <b>{q_[('Camera + depth + position', 0.5)]:.0f}%</b> of bleached "
+                     f"coral in detail in murky water (camera alone {q_[('Camera only', 0.5)]:.0f}%); in very murky water both fail.")
     look_share = (100 * 4000 * rs.ROBOT["look_energy_j"] / 1000 / A50.energy_kj_mean) if summary is not None else float("nan")
     sand_ph = (f"{A50.photos_on_sand_pct_mean:.0f}%" if summary is not None else "–")
     nc = clf["near_copy_check"]["test"]["percent"] if clf else "–"
@@ -690,9 +795,9 @@ else:
          f"Under the energy model, classifying every metre costs about <b>{look_share:.2f}%</b> of the mission's energy. "
          "Moving and keeping the electronics on cost far more. <i>Rests on an assumed 0.2 J per classification; "
          "not measured on embedded hardware.</i>"),
-        ("Problem 3", "Murky water confuses recognition, causing false alarms and missed bleaching.", "part",
+        ("Problem 3", "Murky water confuses recognition, causing false alarms and missed bleaching.", "ok" if MURKY_TXT else "part",
          "Both kinds of mistake were measured on an independent dataset. The knowledge graph removes about <b>82%</b> of false "
-         "alarms and lingering recovers most missed bleaching. <b>Murky water itself was not tested.</b>"),
+         "alarms and lingering recovers most missed bleaching. " + (MURKY_TXT or "<b>Murky water itself was not tested.</b>")),
         ("Objective i", "Lightweight models (MobileNetV3, Tiny U-Net) that sort healthy, bleached and sand/rock.", "ok",
          "Both built: MobileNetV3-Small (6.2 MB) and Tiny U-Net (2.0 MB). The classifier covers healthy vs bleached only, "
          "because no sand/rock photos were available; the Tiny U-Net covers all three."),
@@ -708,9 +813,11 @@ else:
          FUSION_TXT or "No depth data was used."),
         ("Gap 3", "Double-check automatic results before they affect decisions.", "ok",
          "The knowledge graph's rule check raises the share of correct bleaching reports from about <b>87% to 97%</b>."),
-        ("Gap 4", "Remove hidden shortcuts (repeated photos) before training.", "part",
-         f"Detected, not removed: <b>{nc}%</b> of test photos were near-copies of training photos, and the honest accuracy "
-         "on a different dataset is reported instead. The model was not retrained on cleaned data."),
+        ("Gap 4", "Remove hidden shortcuts (repeated photos) before training.", "ok" if cr_ else "part",
+         (f"Near-copies were grouped ({cr_['groups']:,} groups from {cr_['photos']:,} photos), each group kept in one split, and the "
+          f"model retrained. Honest test accuracy: <b>{100 * cr_['clean_test']['accuracy']:.1f}%</b> (was 100%). On independent photos it "
+          f"scores {100 * cr_['independent_clean_model']['accuracy']:.1f}%, so the dataset also lacks variety.") if cr_ else
+         f"Detected, not removed: <b>{nc}%</b> of test photos were near-copies of training photos."),
     ]
     html(S.promise_table(rows))
     html(S.section("Ground rules", "What is real, measured or assumed"))
@@ -740,11 +847,11 @@ else:
     ], columns=["Term", "Meaning"]))
     html(S.section("Limitations", "What this study does not show"))
     st.markdown("""
-- **Not tested in HoloOcean or ROS 2.** The survey is a 2-D Python simulation: no currents, turns, depth changes or water clarity.
+- **Not tested in HoloOcean or ROS 2.** The survey is a 2-D Python simulation: no currents, turns or depth changes.
 - **Robot figures are assumptions.** Speeds, power use and photo energy were not measured on a real vehicle (try them on the Robot Lab page).
-- **Murky water was not tested.** Both models were evaluated on reasonably clear photos.
+- **Murky water is simulated** by changing real photos (haze, colour loss, noise, blur); real turbidity varies more. Above "murky", both models fail.
 - **The depth sensor is simulated**: rock and coral heights and the sensor's noise are assumed values (Gap 2).
-- **Shortcut photos were detected but not removed**, and the classifier was not retrained on cleaned data (Gap 4).
+- **The dataset lacks variety.** After removing shortcut photos (Gap 4) the classifier is honest on its own data (97.4%) but weaker on photos from elsewhere.
 - **The classifier has two classes.** Sand/rock comes from a simulated sensor (97% assumed accuracy) or from the Tiny U-Net.
 - **Mistakes are drawn independently per metre**; in real water they may come in runs, which could weaken the linger rule.
 - **Dataset caveats:** the classifier's training and independent datasets may share original sources; the Tiny U-Net was trained

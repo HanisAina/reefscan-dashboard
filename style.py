@@ -104,6 +104,9 @@ div[role="radiogroup"] > label:has(input:checked) p {{ color: #ffffff !important
 .stMainBlockContainer div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Navigation"]) {{
   position: sticky; top: 0; z-index: 999; background: rgba(255,255,255,.82); backdrop-filter: saturate(180%) blur(14px);
   padding: 8px 0; border-bottom: 1px solid {LINE}; }}
+.stMainBlockContainer div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stButtonGroup"]):first-of-type {{
+  position: sticky; top: 0; z-index: 999; background: rgba(255,255,255,.82); backdrop-filter: saturate(180%) blur(14px); padding: 8px 0; }}
+div[data-testid="stButtonGroup"] button {{ border-radius: 999px !important; font-weight: 600 !important; }}
 /* motion */
 .card, .feature, .robot {{ transition: transform .18s ease, box-shadow .18s ease; }}
 .card:hover, .feature:hover, .robot:hover {{ transform: translateY(-3px); box-shadow: 0 14px 30px rgba(17,17,17,.08); }}
