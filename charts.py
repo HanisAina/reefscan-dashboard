@@ -153,7 +153,7 @@ def tradeoff(df, perception, labels=None, title=None):
             hovertemplate=("<b>" + veh + "</b><br>" + ("Same on every reef" if fixed else "Sand/rock: %{customdata[0]}%") +
                            "<br>Energy: %{x:.0f} kJ<br>Bleached coral in detail: %{y:.1f}%"
                            "<br>Photos: %{customdata[1]:,}<br>Time: %{customdata[2]} min<extra></extra>")))
-    fig.add_annotation(xref="paper", yref="paper", x=0.0, y=1.0, ax=0.30, ay=0.55, axref="paper", ayref="paper",
+    fig.add_annotation(xref="x domain", yref="y domain", x=0.0, y=1.0, ax=0.30, ay=0.55, axref="x domain", ayref="y domain",
                        showarrow=True, arrowhead=3, arrowsize=1.2, arrowwidth=2, arrowcolor="#00875a",
                        text="★ <b>Best corner</b>: more detail, less energy", align="left", xanchor="left",
                        font=dict(size=12, color="#00875a"), bgcolor="#e8f7f0", borderpad=6)
@@ -244,12 +244,12 @@ def energy_curve(hotel, drag, modes):
     return base(fig, 360, "Travel energy per metre (without photos)", legend=False)
 
 
-def grouped(categories, series, title, ytitle, height=340):
+def grouped(categories, series, title, ytitle, height=340, fmt="{:.2f}"):
     fig = go.Figure()
     palette = [S.ACCENT, S.INK, "#00a383", "#ff9f0a"]
     for i, (name, vals) in enumerate(series.items()):
         fig.add_trace(go.Bar(x=categories, y=vals, name=name, marker=dict(color=palette[i % 4], cornerradius=6),
-                             text=[f"{v:.2f}" for v in vals], textposition="outside", cliponaxis=False))
+                             text=[fmt.format(v) for v in vals], textposition="outside", cliponaxis=False))
     fig.update_layout(barmode="group")
     fig.update_yaxes(title=ytitle)
     return base(fig, height, title)
