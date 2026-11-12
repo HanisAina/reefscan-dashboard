@@ -42,7 +42,7 @@ ROBOT_INFO = [
     ("Adaptive (no linger)", "Same rule without staying slow afterwards. Shows why lingering matters."),
     ("RL agent", "Learned its own rule from rewards instead of being told."),
 ]
-PAGES = ["Home", "Classifier", "Tiny U-Net", "Simulation", "Results", "Knowledge Graph", "RL Agent", "Robot Lab", "Glossary & Limits"]
+PAGES = ["Home", "Classifier", "Tiny U-Net", "Simulation", "Results", "Knowledge Graph", "RL Agent", "Robot Lab"]
 N_STEPS = 8
 
 st.set_page_config(page_title="ReefScan · Coral Reef Survey Agent", page_icon="🪸", layout="wide",
@@ -255,8 +255,7 @@ if page == "Home":
                  "<b>Results</b>: the trade-off chart over 90 reefs",
                  "<b>Knowledge Graph</b>: turning reports into hotspots",
                  "<b>RL Agent</b>: what the robot learned by itself",
-                 "<b>Robot Lab</b>: change the robot and see what happens",
-                 "<b>Glossary & Limits</b>: terms, assumptions and honest limits"]))
+                 "<b>Robot Lab</b>: change the robot and see what happens"]))
 
 # ================================================================== 2 CLASSIFIER
 elif page == "Classifier":
@@ -274,8 +273,8 @@ elif page == "Classifier":
              "The simulation uses these real error rates, not the 100%."]))
         html(S.cards([(f"{clf['images']['train']:,}", "Training photos"), (f"{t['train_minutes']} min", "Training time", "on a T4 GPU"),
                       (f"{t['model_size_mb']} MB", "Model size", "small enough for a robot"), (f"{t['ms_per_image']} ms", "Time per photo", "on a GPU")], cols=4))
-        tab1, tab2, tab3, tab3b, tab4 = st.tabs(["Step 1 · Looked perfect", "Step 2 · Why: near-copies", "Step 3 · The honest number",
-                                                  "Step 4 · Cleaned and retrained", "Try your own photo"])
+        tab1, tab2, tab3, tab3b = st.tabs(["Step 1 · Looked perfect", "Step 2 · Why: near-copies", "Step 3 · The honest number",
+                                            "Step 4 · Cleaned and retrained"])
         with tab1:
             c = st.columns(2)
             with c[0]:
@@ -342,38 +341,6 @@ elif page == "Classifier":
                                "Both models do worse on photos from other places, so the dataset needs more variety, not more of the same "
                                "videos. The simulation keeps the original model's error rates on independent photos (76% of bleaching "
                                "found), which are the ones measured on photos neither model was trained on.", "info"))
-        with tab4:
-            up = None
-            if not HAS_TORCH or not os.path.exists(os.path.join(MODELS, "best_model.pt")):
-                html(S.callout("Photo upload runs on the <b>offline (laptop) version</b> of this dashboard. The model needs PyTorch, "
-                               "which is too large for the free online host.", "info"))
-            else:
-                up = st.file_uploader("Upload an underwater coral photo", type=["jpg", "jpeg", "png"])
-            if up is not None:
-                c = st.columns(2)
-                c[0].image(up)
-                try:
-                    import torch, torch.nn as nn
-                    from torchvision import models, transforms
-                    from PIL import Image
-                    mp = os.path.join(MODELS, "best_model.pt")
-                    if not os.path.exists(mp):
-                        c[1].warning("Copy best_model.pt into the models folder to enable this.")
-                    else:
-                        ck = torch.load(mp, map_location="cpu")
-                        m = models.mobilenet_v3_small(weights=None)
-                        m.classifier[3] = nn.Linear(m.classifier[3].in_features, len(ck["classes"]))
-                        m.load_state_dict(ck["state_dict"]); m.eval()
-                        tf = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
-                                                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-                        with torch.no_grad():
-                            pr = torch.softmax(m(tf(Image.open(up).convert("RGB")).unsqueeze(0)), 1)[0].numpy()
-                        b = int(pr.argmax())
-                        with c[1]:
-                            html(S.cards([(ck["classes"][b], "Prediction", f"{100 * pr[b]:.1f}% confident")], cols=1))
-                            plot(C.bars(ck["classes"], [100 * float(v) for v in pr], "Confidence", "{:.1f}", "%", height=280), key="c5")
-                except ImportError:
-                    c[1].warning("Install PyTorch first: python -m pip install torch torchvision pillow")
     next_button()
 
 # ================================================================== 3 U-NET
@@ -390,23 +357,16 @@ elif page == "Tiny U-Net":
              f"Overall it overlaps the true outlines by <b>{100 * unet['test_mean_iou']:.0f}%</b> (mean IoU).",
              f"Bleached coral is the hardest class (Dice <b>{unet['test_dice']['Bleached coral']:.2f}</b>) because only 1% of pixels are bleached.",
              f"It is tiny: <b>{unet['model_size_mb']} MB</b>, {unet['ms_per_image_gpu']} ms per photo on a GPU."]))
-        p = os.path.join(FIGS, "unet_examples.png")
-        tabs = st.tabs(["Examples", "Scores per class", "Where pixels go wrong", "One decision per photo"])
+        tabs = st.tabs(["Scores per class", "Where pixels go wrong", "One decision per photo"])
         with tabs[0]:
-            html(S.legend([("#4d4d4d", "Other"), (S.SAND, "Sand/rock"), (S.HEALTHY, "Healthy coral"), ("#ffffff", "Bleached coral")]))
-            if os.path.exists(p):
-                wide(st.image, p, caption="Left: photo. Middle: the true outline drawn by people. Right: what the Tiny U-Net drew.")
-            else:
-                html(S.callout("Example outlines are shown in the dissertation.", "info"))
-        with tabs[1]:
             cl = unet["classes"]
             plot(C.grouped(cl, {"IoU": [unet["test_iou"][k] for k in cl], "Dice": [unet["test_dice"][k] for k in cl]},
                            "Test scores per class (1.0 = perfect outline)", "Score"), key="u1")
-            st.caption("IoU and Dice both measure how much the drawn outline overlaps the true one. See the Glossary for details.")
-        with tabs[2]:
+            st.caption("IoU and Dice both measure how much the drawn outline overlaps the true one (1.0 = a perfect match). Dice gives a little more credit for partial overlap.")
+        with tabs[1]:
             plot(C.confusion(unet["pixel_confusion"], unet["classes"], "Where each true class ends up (% of its pixels)", "Greens", normalise=True), key="u2")
             st.caption("How to read: each row adds up to 100%. The diagonal is correct; the rest shows what it was confused with.")
-        with tabs[3]:
+        with tabs[2]:
             c = st.columns(2)
             with c[0]:
                 plot(C.confusion(unet["photo_confusion"], ["Sand/rock", "Healthy", "Bleached"],
@@ -801,113 +761,6 @@ elif page == "Robot Lab":
         plot(C.bars(names, [res[n]["bleached_detail_pct"] for n in names], "Bleached in detail", "{:.0f}", "%", height=360), key="lb")
     st.caption("Uses the classifier's real error rates and 5 reefs, so numbers differ slightly from the 90-reef results.")
     next_button()
-
-# ================================================================== GLOSSARY & LIMITS
-else:
-    html(S.section("Scope & limits", "What the interim report promised, and what was delivered",
-                   "Each problem, objective and research gap from the interim report, checked against the evidence in this dashboard."))
-    fa_ = load_csv("fusion_ablation.csv")
-    FUSION_TXT = ""
-    if fa_ is not None:
-        g_ = fa_[np.isclose(fa_.sand_fraction, 0.5)].groupby("variant").mean(numeric_only=True)
-        FUSION_TXT = (f"Camera, depth and position are combined with Bayes' rule. Per-metre accuracy rises from "
-                      f"<b>{100 * g_.loc['Camera only'].accuracy:.0f}%</b> (camera only) to <b>{100 * g_.loc['Camera + depth + position'].accuracy:.0f}%</b>, "
-                      f"and bleached coral found from <b>{100 * g_.loc['Camera only'].bleached_recall:.0f}%</b> to "
-                      f"<b>{100 * g_.loc['Camera + depth + position'].bleached_recall:.0f}%</b>. <i>The depth sensor is simulated.</i>")
-    cr_, rob_, mk_ = load_json("clean_retrain.json"), load_json("robustness.json"), load_csv("murky_survey.csv")
-    MURKY_TXT = ""
-    if rob_ and mk_ is not None:
-        q_ = mk_[np.isclose(mk_.sand_fraction, 0.5)].groupby(["variant", "level"]).bleached_detail_pct.mean()
-        MURKY_TXT = (f"<b>Murky water was tested</b> on real photos made murky in 5 steps: the classifier's bleached recall falls from "
-                     f"{100 * rob_['classifier']['original_raw'][0]['bleached_recall']:.0f}% to {100 * rob_['classifier']['original_raw'][4]['bleached_recall']:.0f}%, "
-                     f"and colour correction makes it worse. Combining sensors keeps <b>{q_[('Camera + depth + position', 0.5)]:.0f}%</b> of bleached "
-                     f"coral in detail in murky water (camera alone {q_[('Camera only', 0.5)]:.0f}%); in very murky water both fail.")
-    ho_ = load_json("holoocean_summary.json"); HO_TXT = ""
-    if ho_:
-        h_ = ho_["robots"]["Adaptive"]
-        HO_TXT = (f"In HoloOcean (one reef, {ho_['reef_metres']} m) it photographed <b>{h_['holoocean']['bleached_detail_pct']:.1f}%</b> "
-                  f"(2-D on the same reef: {h_['simulation_2d']['bleached_detail_pct']:.1f}%) and used "
-                  f"{100 * (1 - h_['holoocean']['energy_kj'] / ho_['robots']['Fixed detailed']['holoocean']['energy_kj']):.0f}% less energy than the fixed detailed survey.")
-    look_share = (100 * 4000 * rs.ROBOT["look_energy_j"] / 1000 / A50.energy_kj_mean) if summary is not None else float("nan")
-    sand_ph = (f"{A50.photos_on_sand_pct_mean:.0f}%" if summary is not None else "–")
-    nc = clf["near_copy_check"]["test"]["percent"] if clf else "–"
-    rows = [
-        ("Problem 1", "Robots scan blindly, wasting battery and storage on empty sand and rock.", "ok",
-         f"Only <b>{sand_ph}</b> of the adaptive robot's photos are taken over sand/rock, against 50% for fixed surveys "
-         f"(50% sand reef). It uses <b>{SAVE_P:.0f}% fewer photos</b> and <b>{SAVE_E:.0f}% less energy</b> than a fixed survey with the "
-         "same detail. Against the standard survey it only saves energy on mostly-sand reefs. <i>Simulation only.</i>"),
-        ("Problem 2", "Running picture recognition all the time drains the battery.", "found",
-         f"Under the energy model, classifying every metre costs about <b>{look_share:.2f}%</b> of the mission's energy. "
-         "Moving and keeping the electronics on cost far more. <i>Rests on an assumed 0.2 J per classification; "
-         "not measured on embedded hardware.</i>"),
-        ("Problem 3", "Murky water confuses recognition, causing false alarms and missed bleaching.", "ok" if MURKY_TXT else "part",
-         "Both kinds of mistake were measured on an independent dataset. The knowledge graph removes about <b>82%</b> of false "
-         "alarms and lingering recovers most missed bleaching. " + (MURKY_TXT or "<b>Murky water itself was not tested.</b>")),
-        ("Objective i", "Lightweight models (MobileNetV3, Tiny U-Net) that sort healthy, bleached and sand/rock.", "ok",
-         "Both built: MobileNetV3-Small (6.2 MB) and Tiny U-Net (2.0 MB). The classifier covers healthy vs bleached only, "
-         "because no sand/rock photos were available; the Tiny U-Net covers all three."),
-        ("Objective ii", "A control programme in ROS 2 that slows down for coral and speeds up over sand.", "part",
-         "The control logic is built and tested (a rule and an RL agent), but in a Python simulation, <b>not inside ROS 2</b>."),
-        ("Objective iii", "Test in HoloOcean and measure battery and storage savings without losing accuracy.", "ok" if HO_TXT else "part",
-         (f"Savings measured on 90 reefs in a 2-D Python simulation (the adaptive robot photographs <b>{A50.bleached_detail_pct_mean:.1f}%</b> "
-          f"of bleached coral in detail), then checked in HoloOcean. " + HO_TXT) if summary is not None else HO_TXT),
-        ("Gap 1", "Balance missed detections against false alarms.", "ok",
-         "Both measured separately (76.4% of bleached found; 92.6% of 'bleached' calls correct). Lingering and the knowledge graph "
-         "handle each side."),
-        ("Gap 2", "Combine depth, colour and position in one decision.", "ok" if FUSION_TXT else "no",
-         FUSION_TXT or "No depth data was used."),
-        ("Gap 3", "Double-check automatic results before they affect decisions.", "ok",
-         "The knowledge graph's rule check raises the share of correct bleaching reports from about <b>87% to 97%</b>."),
-        ("Gap 4", "Remove hidden shortcuts (repeated photos) before training.", "ok" if cr_ else "part",
-         (f"Near-copies were grouped ({cr_['groups']:,} groups from {cr_['photos']:,} photos), each group kept in one split, and the "
-          f"model retrained. Honest test accuracy: <b>{100 * cr_['clean_test']['accuracy']:.1f}%</b> (was 100%). On independent photos it "
-          f"scores {100 * cr_['independent_clean_model']['accuracy']:.1f}%, so the dataset also lacks variety.") if cr_ else
-         f"Detected, not removed: <b>{nc}%</b> of test photos were near-copies of training photos."),
-    ]
-    html(S.promise_table(rows))
-    html(S.section("Ground rules", "What is real, measured or assumed"))
-    html(S.features([
-        ("Real", "Trained models", "MobileNetV3-Small classifier and Tiny U-Net, trained and tested on real reef photographs."),
-        ("Measured", "Error rates", "The robot's mistakes follow the error rates measured on photos the models never saw."),
-        ("Assumed", "Reef and robot", "A 2-D grid reef and a lawnmower path. Speeds, power use and photo energy are assumptions."),
-    ], cols=3))
-    html(S.section("Glossary", "Terms used in this dashboard"))
-    table(pd.DataFrame([
-        ("Bleaching", "Coral turning white under heat stress. Still alive, but at risk of dying."),
-        ("Lawnmower survey", "Covering an area in straight back-and-forth lanes at one fixed speed and photo rate."),
-        ("Detail", "A metre counts as photographed 'in detail' if it got at least 4 photos."),
-        ("Linger", "After seeing bleaching, the adaptive robot stays slow for a few more metres in case it missed some."),
-        ("Accuracy", "Share of all answers that were correct."),
-        ("Recall", "Of everything that really is bleached, the share the model found."),
-        ("Precision", "Of everything the model called bleached, the share that really was."),
-        ("Near-copy", "A flipped, rotated or brightened version of the same photo (here, nearby frames of one video)."),
-        ("IoU", "Overlap between the drawn outline and the true outline, divided by their combined area (1 = perfect)."),
-        ("Dice", "Similar to IoU but counts the overlap twice; always a bit higher than IoU (1 = perfect)."),
-        ("Hotel power", "Power used every second by the computer and sensors, whether moving or not."),
-        ("Drag", "Power needed to push through water; rises with the cube of speed."),
-        ("Knowledge graph", "Dots (bleaching reports) joined by lines when close together, used to confirm reports and find hotspots."),
-        ("Degree centrality", "How many links a dot has, divided by the most it could have: C(v) = deg(v) / (N − 1)."),
-        ("Reinforcement learning", "Learning by trial and reward instead of being given rules."),
-        ("Q-learning", "Keeping a table of the average reward for each action in each situation, and picking the best."),
-    ], columns=["Term", "Meaning"]))
-    html(S.section("Limitations", "What this study does not show"))
-    st.markdown("""
-- **HoloOcean was used for one reef only** (800 m, one run per robot), without currents; the 90-reef results come from the 2-D simulation. ROS 2 was not used.
-- **Slowing down takes about 4 m in HoloOcean**, longer than the 3 m linger, so on short bleached patches the vehicle takes detail-spaced photos before reaching detail speed. Motion blur is not modelled.
-- **Robot figures are assumptions.** Speeds, power use and photo energy were not measured on a real vehicle (try them on the Robot Lab page).
-- **Murky water is simulated** by changing real photos (haze, colour loss, noise, blur); real turbidity varies more. Above "murky", both models fail.
-- **The depth sensor is simulated**: rock and coral heights and the sensor's noise are assumed values (Gap 2).
-- **The dataset lacks variety.** After removing shortcut photos (Gap 4) the classifier is honest on its own data (97.4%) but weaker on photos from elsewhere.
-- **The classifier has two classes.** Sand/rock comes from a simulated sensor (97% assumed accuracy) or from the Tiny U-Net.
-- **Mistakes are drawn independently per metre**; in real water they may come in runs, which could weaken the linger rule.
-- **Dataset caveats:** the classifier's training and independent datasets may share original sources; the Tiny U-Net was trained
-  on Red Sea reefs and only 27 of its test photos count as bleached.
-- **Speeds were measured on a GPU**, not on low-power hardware like a robot would carry.
-""")
-    s = load_json("settings.json")
-    if s:
-        with st.expander("All simulation settings"):
-            st.json(s)
 
 if FEEDBACK_URL and page != "Home":
     st.write("")

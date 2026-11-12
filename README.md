@@ -2,9 +2,10 @@
 
 Final Year Project, Bachelor of Computer Science (Hons), Universiti Teknologi PETRONAS
 **Author:** Muhammad Alif Najmi bin Mohammad Zamri (22005632)
-**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy ·
+**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy · **Co-supervisor:** Ts. Dr. Mazeyanti Bt Mohd Ariffin
 
-**Live dashboard:** _add your Streamlit link here_
+**Live dashboard:** https://reefscan-hanisaina.streamlit.app  
+**Code:** https://github.com/HanisAina/reefscan-dashboard
 
 ## What this is
 
@@ -13,16 +14,15 @@ slow and detailed over **bleached coral**, normal over **healthy coral**, fast o
 It is compared with fixed "mow-the-lawn" surveys on 90 simulated reefs, using the measured error rates
 of real trained models.
 
-The dashboard walks through the whole study in eight steps:
+The dashboard walks through the whole study in seven steps:
 
-1. **Classifier**: MobileNetV3-Small (healthy vs bleached), including a near-copy check and a test on an independent dataset
+1. **Classifier**: MobileNetV3-Small (healthy vs bleached), including a near-copy check, a clean retrain and a test on an independent dataset
 2. **Tiny U-Net**: pixel-level segmentation of sand/rock, healthy and bleached coral
 3. **Simulation**: watch a survey, lane by lane
-4. **Results**: time, energy, photos and bleached-coral coverage over 90 reefs, plus the sensor-fusion comparison
+4. **Results**: time, energy, photos and bleached-coral coverage over 90 reefs, plus sensor fusion, murky water and a HoloOcean check
 5. **Knowledge graph**: linking bleaching reports into hotspots and filtering false alarms
 6. **RL agent**: a Q-learning agent that learns its own speed rule
 7. **Robot Lab**: change the robot's assumptions and re-run
-8. **Glossary & Limits**: what was promised, what was delivered, and honest limitations
 
 > This is a **simulation-only** study. The models are real and trained on real photographs; the reef,
 > the robot's movement and its energy use are simulated with stated assumptions.
@@ -42,6 +42,7 @@ All results are already in `data/`. To regenerate them: `python run_experiments.
 |---|---|
 | `app.py` | The dashboard |
 | `reefsim.py` | Reef generation, robot, energy and photo accounting |
+| `holoocean_survey.py` | Runs the same robots inside the HoloOcean simulator |
 | `fusion.py` | Combines camera, depth and position in one decision (Bayes' rule) |
 | `knowledge_graph.py` | Bleaching-report graph, hotspots, false-alarm check |
 | `rl_agent.py` | Q-learning agent |
