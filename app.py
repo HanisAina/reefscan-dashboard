@@ -597,6 +597,45 @@ elif page == "Results":
             st.caption("Murky water is simulated on real test photos (classifier: 1,169 independent photos; U-Net: Coralscapes test photos). "
                        "Real turbidity varies more than this. The slight rise for the classifier at 'Slightly murky' is probably because "
                        "its training videos were themselves blue-green.")
+    ho = load_json("holoocean_summary.json")
+    if ho:
+        R_ = ho["robots"]
+        html(S.section("HoloOcean check · Objective iii", "Does it still work with a real-feeling vehicle?",
+                       "The 2-D simulation assumes the robot changes speed instantly. Here a HoloOcean HoveringAUV, with mass, drag, "
+                       f"buoyancy and thrusters, flew {ho['reef_metres']} m of one test reef ({ho['lanes']} lanes, {int(ho['sand_fraction'] * 100)}% sand) "
+                       "with the same rule and the same recognition mistakes."))
+        ad, nl = R_["Adaptive"], R_["Adaptive (no linger)"]
+        html(S.explain(
+            "The main result holds: the adaptive robot photographs almost the same share of bleached coral in detail as in the 2-D simulation.",
+            [f"Bleached coral in detail: <b>{ad['holoocean']['bleached_detail_pct']:.1f}%</b> in HoloOcean vs {ad['simulation_2d']['bleached_detail_pct']:.1f}% in 2-D "
+             f"(no linger: {nl['holoocean']['bleached_detail_pct']:.1f}% vs {nl['simulation_2d']['bleached_detail_pct']:.1f}%).",
+             f"Slowing down is not instant: on average <b>{ad['holoocean']['slowdown_metres_mean']:.1f} m</b> ({ad['holoocean']['slowdown_seconds_mean']:.1f} s) "
+             f"to drop to detail speed, up to {ad['holoocean']['slowdown_metres_max']:.1f} m. Photos are still taken at detail spacing, so the photo count holds, "
+             "but the vehicle is moving faster than planned for the first few metres.",
+             f"Against the fixed detailed survey it uses <b>{100 * (1 - ad['holoocean']['energy_kj'] / R_['Fixed detailed']['holoocean']['energy_kj']):.0f}% less energy</b> and "
+             f"{100 * (1 - ad['holoocean']['photos'] / R_['Fixed detailed']['holoocean']['photos']):.0f}% fewer photos (2-D: "
+             f"{100 * (1 - ad['simulation_2d']['energy_kj'] / R_['Fixed detailed']['simulation_2d']['energy_kj']):.0f}% and "
+             f"{100 * (1 - ad['simulation_2d']['photos'] / R_['Fixed detailed']['simulation_2d']['photos']):.0f}%).",
+             f"The vehicle cruised at about {ho['reef_metres'] / R_['Fixed standard']['holoocean']['time_min'] / 60:.2f} m/s when asked for 1.0 m/s, and stayed within "
+             f"{max(r['holoocean']['max_path_error_m'] for r in R_.values()):.1f} m of its line (lanes are 2 m apart)."]))
+        names_ = list(R_)
+        c = st.columns(2)
+        with c[0]:
+            plot(C.grouped(names_, {"2-D simulation": [R_[n]["simulation_2d"]["bleached_detail_pct"] for n in names_],
+                                    "HoloOcean": [R_[n]["holoocean"]["bleached_detail_pct"] for n in names_]},
+                           "Bleached coral photographed in detail", "%", fmt="{:.0f}%"), key="ho1")
+        with c[1]:
+            plot(C.grouped(names_, {"2-D simulation": [R_[n]["simulation_2d"]["energy_kj"] for n in names_],
+                                    "HoloOcean": [R_[n]["holoocean"]["energy_kj"] for n in names_]},
+                           "Energy over the reef lanes", "kJ", fmt="{:.0f}"), key="ho2")
+        with st.expander("All HoloOcean numbers"):
+            table(pd.DataFrame([{"Robot": n, "Where": w, "Time (min)": f"{R_[n][k]['time_min']:.1f}", "Energy (kJ)": f"{R_[n][k]['energy_kj']:.1f}",
+                                 "Photos": f"{R_[n][k]['photos']:,}", "Bleached in detail": f"{R_[n][k]['bleached_detail_pct']:.1f}%",
+                                 "Photos over sand": f"{R_[n][k]['photos_on_sand_pct']:.1f}%"}
+                                for n in names_ for w, k in [("2-D", "simulation_2d"), ("HoloOcean", "holoocean")]]))
+        st.caption(f"One reef, one run per robot (HoloOcean {ho['world']} world, {ho['ticks_per_sec']} physics steps per second). Time and energy are over the "
+                   "reef lanes; turns added about 8 to 25 s per robot. Energy uses the same model as the 2-D simulation, applied to the speeds HoloOcean "
+                   "actually produced. Recognition mistakes still come from the measured error rates, not from HoloOcean's camera.")
     next_button()
 
 # ================================================================== 6 KNOWLEDGE GRAPH
@@ -783,6 +822,12 @@ else:
                      f"{100 * rob_['classifier']['original_raw'][0]['bleached_recall']:.0f}% to {100 * rob_['classifier']['original_raw'][4]['bleached_recall']:.0f}%, "
                      f"and colour correction makes it worse. Combining sensors keeps <b>{q_[('Camera + depth + position', 0.5)]:.0f}%</b> of bleached "
                      f"coral in detail in murky water (camera alone {q_[('Camera only', 0.5)]:.0f}%); in very murky water both fail.")
+    ho_ = load_json("holoocean_summary.json"); HO_TXT = ""
+    if ho_:
+        h_ = ho_["robots"]["Adaptive"]
+        HO_TXT = (f"In HoloOcean (one reef, {ho_['reef_metres']} m) it photographed <b>{h_['holoocean']['bleached_detail_pct']:.1f}%</b> "
+                  f"(2-D on the same reef: {h_['simulation_2d']['bleached_detail_pct']:.1f}%) and used "
+                  f"{100 * (1 - h_['holoocean']['energy_kj'] / ho_['robots']['Fixed detailed']['holoocean']['energy_kj']):.0f}% less energy than the fixed detailed survey.")
     look_share = (100 * 4000 * rs.ROBOT["look_energy_j"] / 1000 / A50.energy_kj_mean) if summary is not None else float("nan")
     sand_ph = (f"{A50.photos_on_sand_pct_mean:.0f}%" if summary is not None else "–")
     nc = clf["near_copy_check"]["test"]["percent"] if clf else "–"
@@ -803,9 +848,9 @@ else:
          "because no sand/rock photos were available; the Tiny U-Net covers all three."),
         ("Objective ii", "A control programme in ROS 2 that slows down for coral and speeds up over sand.", "part",
          "The control logic is built and tested (a rule and an RL agent), but in a Python simulation, <b>not inside ROS 2</b>."),
-        ("Objective iii", "Test in HoloOcean and measure battery and storage savings without losing accuracy.", "part",
-         f"Savings measured on 90 reefs in a <b>2-D Python simulation, not HoloOcean</b>. The adaptive robot still photographs "
-         f"<b>{A50.bleached_detail_pct_mean:.1f}%</b> of bleached coral in detail." if summary is not None else ""),
+        ("Objective iii", "Test in HoloOcean and measure battery and storage savings without losing accuracy.", "ok" if HO_TXT else "part",
+         (f"Savings measured on 90 reefs in a 2-D Python simulation (the adaptive robot photographs <b>{A50.bleached_detail_pct_mean:.1f}%</b> "
+          f"of bleached coral in detail), then checked in HoloOcean. " + HO_TXT) if summary is not None else HO_TXT),
         ("Gap 1", "Balance missed detections against false alarms.", "ok",
          "Both measured separately (76.4% of bleached found; 92.6% of 'bleached' calls correct). Lingering and the knowledge graph "
          "handle each side."),
@@ -847,7 +892,8 @@ else:
     ], columns=["Term", "Meaning"]))
     html(S.section("Limitations", "What this study does not show"))
     st.markdown("""
-- **Not tested in HoloOcean or ROS 2.** The survey is a 2-D Python simulation: no currents, turns or depth changes.
+- **HoloOcean was used for one reef only** (800 m, one run per robot), without currents; the 90-reef results come from the 2-D simulation. ROS 2 was not used.
+- **Slowing down takes about 4 m in HoloOcean**, longer than the 3 m linger, so on short bleached patches the vehicle takes detail-spaced photos before reaching detail speed. Motion blur is not modelled.
 - **Robot figures are assumptions.** Speeds, power use and photo energy were not measured on a real vehicle (try them on the Robot Lab page).
 - **Murky water is simulated** by changing real photos (haze, colour loss, noise, blur); real turbidity varies more. Above "murky", both models fail.
 - **The depth sensor is simulated**: rock and coral heights and the sensor's noise are assumed values (Gap 2).
