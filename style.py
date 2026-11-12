@@ -282,4 +282,4 @@ def promise_table(rows):
 def footer():
     return ('<div class="footer">Autonomous Resource-Aware Agent for Priority-Based Coral Reef Health Mapping · '
             'Muhammad Alif Najmi bin Mohammad Zamri · Supervisor: Ts. Dr. Manoranjitham A/P Muniandy · '
-            'Co-supervisor: Ts. Dr. Mazeyanti Bt Mohd Ariffin · Simulation-only study</div>')
+            'Simulation-only study</div>')
