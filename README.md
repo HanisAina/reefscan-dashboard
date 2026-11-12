@@ -2,7 +2,7 @@
 
 Final Year Project, Bachelor of Computer Science (Hons), Universiti Teknologi PETRONAS
 **Author:** Muhammad Alif Najmi bin Mohammad Zamri (22005632)
-**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy · **Co-supervisor:** Ts. Dr. Mazeyanti Bt Mohd Ariffin
+**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy ·
 
 **Live dashboard:** https://reefscan-hanisaina.streamlit.app  
 **Code:** https://github.com/HanisAina/reefscan-dashboard
