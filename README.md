@@ -2,7 +2,7 @@
 
 Final Year Project, Bachelor of Computer Science (Hons), Universiti Teknologi PETRONAS
 **Author:** Muhammad Alif Najmi bin Mohammad Zamri (22005632)
-**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy ·
+**Supervisor:** Ts. Dr. Manoranjitham A/P Muniandy
 
 **Live dashboard:** https://reefscan-hanisaina.streamlit.app  
 **Code:** https://github.com/HanisAina/reefscan-dashboard
@@ -27,6 +27,17 @@ The dashboard walks through the whole study in seven steps:
 > This is a **simulation-only** study. The models are real and trained on real photographs; the reef,
 > the robot's movement and its energy use are simulated with stated assumptions.
 
+## Research Console (second dashboard)
+
+`researcher.py` is a second app for researchers and reef managers:
+
+- **Data and statistics**: every result file, descriptive statistics with 95% confidence intervals, distributions across reefs, paired comparisons between robots, CSV downloads
+- **Run an experiment**: choose the reef, recognition errors, linger, speeds and energy settings, and re-run the survey live
+- **Model diagnostics**: confusion matrices and per-class scores for every evaluation, Tiny U-Net details, murky-water curves, the HoloOcean check
+- **Hotspot planner**: turn bleaching reports (simulated, or your own CSV with `x_m`, `y_m`) into a ranked list of places for divers to visit
+
+Run it with `python -m streamlit run researcher.py`.
+
 ## Run it on your own computer
 
 ```
@@ -41,6 +52,7 @@ All results are already in `data/`. To regenerate them: `python run_experiments.
 | File | Purpose |
 |---|---|
 | `app.py` | The dashboard |
+| `researcher.py` | The Research Console (second dashboard) |
 | `reefsim.py` | Reef generation, robot, energy and photo accounting |
 | `holoocean_survey.py` | Runs the same robots inside the HoloOcean simulator |
 | `fusion.py` | Combines camera, depth and position in one decision (Bayes' rule) |
