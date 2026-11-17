@@ -18,6 +18,7 @@ import plotly.graph_objects as go
 import reefsim as rs
 import knowledge_graph as kg
 import rl_agent as rl
+import photo_lab as PL
 import charts as C
 import style as S
 
@@ -112,7 +113,8 @@ html(S.section("For researchers and reef managers", "ReefScan Research Console",
                "The full data behind the study, live experiments with your own settings, model diagnostics and a hotspot "
                "planner for field teams. Everything here is simulation-based: the models are real, the reefs and vehicle are simulated."))
 st.caption("Looking for the guided version for examiners and the public? Open the main dashboard: https://reefscan-hanisaina.streamlit.app")
-tabs = st.tabs(["📊 Data and statistics", "🧪 Run an experiment", "🔍 Model diagnostics", "🗺️ Hotspot planner"])
+tabs = st.tabs(["📊 Data and statistics", "🧪 Run an experiment", "🔍 Model diagnostics", "🗺️ Hotspot planner",
+                "🖼️ Train on your photos"])
 
 # ================================================================== 1. DATA AND STATISTICS
 with tabs[0]:
@@ -502,5 +504,162 @@ with tabs[3]:
                        "reliable each hotspot is; field data would not have this column.")
     elif source == "Upload a CSV":
         st.info("Upload a CSV to see the hotspot map, or download the template to see the format.")
+
+# ================================================================== 5. TRAIN ON YOUR PHOTOS
+@st.cache_data(show_spinner=False, max_entries=3)
+def lab_from_zip(data):
+    d = PL.process(PL.iter_zip(data))
+    d["groups"] = PL.near_copy_groups(hashes=d.pop("hashes"))
+    return d
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def lab_from_files(payload):
+    d = PL.process(iter(payload))
+    d["groups"] = PL.near_copy_groups(hashes=d.pop("hashes"))
+    return d
+
+
+@st.cache_data(show_spinner=False, max_entries=6)
+def lab_train(X, y, groups, kind, folds):
+    res, k = PL.cross_validate(X, y, groups, kind, folds)
+    return {n: p for n, (p, _) in res.items()}, k
+
+
+@st.cache_resource(show_spinner=False, max_entries=3)
+def lab_final(X_bytes, y_bytes, shape, kind):
+    X = np.frombuffer(X_bytes, dtype=np.float32).reshape(shape); y = np.frombuffer(y_bytes, dtype=int)
+    return PL.train_final(X, y, kind)
+
+
+def send_rates(rec, fa):
+    st.session_state["e_perc"] = "Custom classifier"
+    st.session_state["e_rec"] = float(round(rec, 2))
+    st.session_state["e_fa"] = float(round(min(fa, 0.5), 2))
+
+
+with tabs[4]:
+    st.subheader("Train a classifier on your own photos")
+    st.caption("Upload labelled photos, check them for near-copies, train a quick model and see how honest its accuracy is. "
+               "This runs on an ordinary CPU in seconds: each photo becomes 54 colour and texture numbers (for example how "
+               "much of it is pale and white, the look of bleached coral), and a scikit-learn model learns from them. "
+               "It is a fast baseline, not the MobileNetV3 from the study; that was trained on a GPU with colab/train_classifier.py.")
+    how = st.radio("How to upload", ["One ZIP file (a folder per class)", "Separate uploads for each class"], horizontal=True, key="l_how")
+    data = None
+    if how.startswith("One ZIP"):
+        st.caption("Example layout: `my_photos.zip/Bleached/*.jpg`, `Healthy/*.jpg`, `Sand/*.jpg`. "
+                   "Folders named train, test or valid are ignored, so the Kaggle coral zip works as it is. Up to 3,000 photos.")
+        up = st.file_uploader("ZIP of photos", type="zip", key="l_zip")
+        if up is not None:
+            with st.spinner("Reading photos, computing features and checking for near-copies..."):
+                data = lab_from_zip(up.getvalue())
+    else:
+        c = st.columns(3)
+        payload = []
+        for i, default in enumerate(["Bleached", "Healthy", "Sand"]):
+            with c[i]:
+                nm = st.text_input(f"Class {i + 1} name", default, key=f"l_nm{i}")
+                files = st.file_uploader(f"Photos of {nm}", type=["jpg", "jpeg", "png", "webp", "bmp"],
+                                         accept_multiple_files=True, key=f"l_f{i}")
+                for f in (files or [])[:1500]:
+                    payload.append((nm.strip(), f.name, f.getvalue()))
+        if len({p[0] for p in payload}) >= 2:
+            with st.spinner("Reading photos, computing features and checking for near-copies..."):
+                data = lab_from_files(tuple(payload))
+        elif payload:
+            st.info("Add photos for at least two classes.")
+    if data is not None and len(data["y"]) and len(data["labels"]) >= 2:
+        y, labels, groups = data["y"], data["labels"], data["groups"]
+        counts = np.bincount(y, minlength=len(labels))
+        gsize = pd.Series(groups).map(pd.Series(groups).value_counts())
+        shared = float((gsize > 1).mean())
+        html(S.cards([(f"{len(y):,}", "photos read", f"{data['skipped']} skipped"),
+                      (f"{len(labels)}", "classes", ", ".join(labels)),
+                      (f"{len(np.unique(groups)):,}", "near-copy groups", "photos that look almost the same are grouped"),
+                      (f"{100 * shared:.1f}%", "photos with a near-copy", "dHash, 6 bits or fewer, 8 flips and rotations",
+                       "down" if shared > 0.1 else "up")], cols=4))
+        if counts.min() < 5:
+            html(S.callout("Each class needs at least 5 photos to train and test. Add more photos to the smallest class.", "warn"))
+        else:
+            with st.expander("Photos per class and examples", expanded=False):
+                table(pd.DataFrame({"Class": labels, "Photos": counts, "Share": (counts / counts.sum()).round(3)}))
+                for cls in labels:
+                    st.caption(cls)
+                    ims = data["thumbs"].get(cls, [])
+                    if ims:
+                        st.image(ims, width=120)
+            c = st.columns(3)
+            kind = c[0].selectbox("Model", ["Logistic regression", "Random forest"], key="l_kind",
+                                  help="Logistic regression: simple and quick. Random forest: many decision trees voting; often stronger.")
+            folds = c[1].slider("Cross-validation folds", 2, 10, 5, key="l_folds")
+            go_train = c[2].button("Train and evaluate", type="primary", key="l_train")
+            if go_train:
+                st.session_state["l_ready"] = True
+            if st.session_state.get("l_ready"):
+                with st.spinner("Training..."):
+                    preds, k = lab_train(data["X"], y, groups, kind, folds)
+                st.markdown(f"**Accuracy measured two ways ({k}-fold cross-validation)**")
+                st.caption("Random split: near-copies can land on both sides, so the model may be tested on photos it has "
+                           "almost seen. Near-copies kept together: each group stays on one side, which is the honest number. "
+                           "A big gap between the two is the shortcut found in the main study.")
+                cols = st.columns(len(preds))
+                accs = {}
+                for i, (name, pred) in enumerate(preds.items()):
+                    cm = PL.confusion(y, pred, len(labels))
+                    accs[name] = cm.trace() / max(cm.sum(), 1)
+                    with cols[i]:
+                        plot(cm_fig(cm, labels, f"{name}: {100 * accs[name]:.1f}% correct", True), key=f"l_cm{i}")
+                        table(pd.DataFrame(PL.per_class(cm, labels)))
+                if len(accs) == 2:
+                    gap = 100 * (accs["Random split"] - accs["Near-copies kept together"])
+                    html(S.callout(f"Keeping near-copies together changes accuracy by <b>{-gap:+.1f} points</b>. "
+                                   + ("That is a large shortcut effect: trust the near-copies-kept-together number." if gap > 3
+                                      else "Small difference: near-copies are not inflating this score much."), "info"))
+                honest = preds.get("Near-copies kept together", preds["Random split"])
+                cm_h = PL.confusion(y, honest, len(labels))
+                rates = PL.sim_rates(cm_h, labels)
+                final = lab_final(data["X"].astype(np.float32).tobytes(), y.astype(int).tobytes(), data["X"].shape, kind)
+                if kind == "Random forest":
+                    imp = pd.Series(final.feature_importances_, index=PL.FEATURE_NAMES).sort_values(ascending=False).head(10)
+                    fig = go.Figure(go.Bar(x=imp.values[::-1], y=imp.index[::-1], orientation="h", marker_color="#2F6FDB"))
+                    plot(C.base(fig, 360, "Which photo features the model relied on most", legend=False), key="l_imp")
+                c = st.columns(3)
+                with c[0]:
+                    st.download_button("Download trained model (.pkl)", PL.export(final, labels, dict(kind=kind, photos=int(len(y)),
+                                       honest_accuracy=float(accs.get("Near-copies kept together", accs["Random split"])))),
+                                       file_name="reef_photo_model.pkl", key="l_dl")
+                with c[1]:
+                    out = pd.DataFrame({"photo": data["names"], "true_class": [labels[i] for i in y],
+                                        "predicted (honest cross-validation)": [labels[i] if i >= 0 else "" for i in honest],
+                                        "near_copy_group": groups})
+                    download(out, "reef_photo_predictions.csv", label="Download predictions CSV", key="l_dl2")
+                with c[2]:
+                    if rates:
+                        st.button(f"Use in the experiment tab (recall {rates[0]:.2f}, false alarms {rates[1]:.2f})",
+                                  on_click=send_rates, args=rates, key="l_send",
+                                  help="Sets 'How the robot sees' to Custom error rates with this model's honest numbers. "
+                                       "Then open the Run an experiment tab.")
+                    else:
+                        st.caption("Name one class Bleached (or Unhealthy) and one Healthy to send this model's error rates "
+                                   "to the survey simulation.")
+                st.markdown("**Try the model on new photos**")
+                new = st.file_uploader("Photos to classify", type=["jpg", "jpeg", "png", "webp", "bmp"], accept_multiple_files=True, key="l_new")
+                if new:
+                    rows, ims = [], []
+                    for f in new[:60]:
+                        try:
+                            from PIL import Image as _I
+                            im = PL.prepare(_I.open(io.BytesIO(f.getvalue())))
+                            p = final.predict_proba([PL.features(im)])[0]
+                            rows.append({"Photo": f.name, "Predicted": labels[int(np.argmax(p))], "Confidence": f"{100 * p.max():.0f}%",
+                                         **{f"P({l})": round(float(v), 3) for l, v in zip(labels, p)}})
+                            th = im.copy(); th.thumbnail((140, 140)); ims.append(th)
+                        except Exception as e:
+                            rows.append({"Photo": f.name, "Predicted": f"could not read ({e})"})
+                    if ims:
+                        st.image(ims, width=120, caption=[r["Predicted"] for r in rows if "Confidence" in r])
+                    table(pd.DataFrame(rows))
+    else:
+        st.info("Upload photos to begin. Tip: the Kaggle coral zip from the study works as it is (Bleached and Healthy folders).")
 
 html(S.footer())

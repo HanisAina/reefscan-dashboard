@@ -3,3 +3,5 @@ numpy
 pandas
 plotly
 networkx
+scikit-learn
+Pillow

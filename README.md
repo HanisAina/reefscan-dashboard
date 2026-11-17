@@ -34,6 +34,7 @@ The dashboard walks through the whole study in seven steps:
 - **Data and statistics**: every result file, descriptive statistics with 95% confidence intervals, distributions across reefs, paired comparisons between robots, CSV downloads
 - **Run an experiment**: choose the reef, recognition errors, linger, speeds and energy settings, and re-run the survey live
 - **Model diagnostics**: confusion matrices and per-class scores for every evaluation, Tiny U-Net details, murky-water curves, the HoloOcean check
+- **Train on your photos**: upload labelled photos (a ZIP with one folder per class), check for near-copies, train a quick scikit-learn model, compare random-split and near-copy-aware accuracy, test new photos, download the model and send its error rates to the simulation
 - **Hotspot planner**: turn bleaching reports (simulated, or your own CSV with `x_m`, `y_m`) into a ranked list of places for divers to visit
 
 Run it with `python -m streamlit run researcher.py`.
@@ -53,6 +54,7 @@ All results are already in `data/`. To regenerate them: `python run_experiments.
 |---|---|
 | `app.py` | The dashboard |
 | `researcher.py` | The Research Console (second dashboard) |
+| `photo_lab.py` | Photo features, near-copy check and quick training for the Research Console |
 | `reefsim.py` | Reef generation, robot, energy and photo accounting |
 | `holoocean_survey.py` | Runs the same robots inside the HoloOcean simulator |
 | `fusion.py` | Combines camera, depth and position in one decision (Bayes' rule) |
